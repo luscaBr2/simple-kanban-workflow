@@ -4,9 +4,9 @@ import {
     useDraggable,
     useDroppable,
     closestCorners,
+    // Importação correta do tipo DragEndEvent (usando 'type')
+    type DragEndEvent,
 } from "@dnd-kit/core";
-// Importação correta do tipo DragEndEvent (usando 'type')
-import type { DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import "./TaskList.css";
 
@@ -18,15 +18,16 @@ interface Task {
     description: string;
     status: "To Do" | "In Progress" | "Done" | "Blocked";
     createdAt: string;
+    updatedAt?: string; // Adicionado para o PUT
 }
 
 type TaskStatus = "To Do" | "In Progress" | "Done" | "Blocked";
 const ALL_STATUSES: TaskStatus[] = ["To Do", "In Progress", "Done", "Blocked"];
 
-// Mantenha o localhost para desenvolvimento:
-const API_URL = import.meta.env.PROD
-    ? "/api/v1/tasks" // Usa caminho relativo quando em produção no Vercel
-    : "http://localhost:3000/api/v1/tasks"; // Usa localhost no desenvolvimento
+// CORREÇÃO CRUCIAL: Incluir o prefixo de rota /api/v1/tasks na URL base.
+const API_BASE_URL = `${
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
+}/api/v1/tasks`;
 
 // Função auxiliar para extrair a mensagem de erro (necessário para catch(unknown))
 const getErrorMessage = (error: unknown): string => {
@@ -124,7 +125,8 @@ const TaskList: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(API_URL);
+            // CORRIGIDO: Usa API_BASE_URL (que agora inclui /api/v1/tasks)
+            const response = await fetch(API_BASE_URL);
             if (!response.ok)
                 throw new Error("Falha ao buscar as tarefas da API.");
             const data: Task[] = await response.json();
@@ -132,7 +134,7 @@ const TaskList: React.FC = () => {
         } catch (error: unknown) {
             const message = getErrorMessage(error);
             setError(
-                `Erro ao conectar com a API: ${message}. Verifique se o backend está rodando na porta 3000.`
+                `Erro ao conectar com a API: ${message}. Verifique se o backend está rodando.`
             );
         } finally {
             setLoading(false);
@@ -144,7 +146,8 @@ const TaskList: React.FC = () => {
         if (!title || !description) return;
 
         try {
-            const response = await fetch(API_URL, {
+            // CORRIGIDO: Usa API_BASE_URL (que agora inclui /api/v1/tasks)
+            const response = await fetch(API_BASE_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title, description }),
@@ -167,17 +170,20 @@ const TaskList: React.FC = () => {
         newStatus: TaskStatus
     ) => {
         try {
-            const response = await fetch(`${API_URL}/${taskId}`, {
+            // CORRIGIDO: Usa API_BASE_URL e apenas adiciona o ID
+            const response = await fetch(`${API_BASE_URL}/${taskId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
             if (!response.ok) {
+                // Se falhar na API, recarrega o estado real do backend
                 fetchTasks();
                 throw new Error("Falha ao atualizar o status na API.");
             }
 
+            // Recarrega o estado para garantir a consistência
             fetchTasks();
         } catch (error: unknown) {
             const message = getErrorMessage(error);
