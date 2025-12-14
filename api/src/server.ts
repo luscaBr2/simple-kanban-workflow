@@ -1,16 +1,10 @@
-import express, { Express, Request, Response } from "express"; // Adicione Request e Response para o tipo da rota de teste
+import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import serverless from "serverless-http";
 import TaskController from "./controllers/TaskController";
-
-// A porta é ignorada em ambientes serverless
-// const PORT = process.env.PORT || 3000;
 
 const app: Express = express();
 
-// Configuração do CORS: Agora aceita qualquer origem em produção para não dar problemas com o Front-end do Vercel
 const corsOptions = {
-    // Em produção, o Vercel gerencia a origem
     origin:
         process.env.NODE_ENV === "production" ? "*" : "http://localhost:5173",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -22,11 +16,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Rota de Teste ---
-// Se esta rota responder em https://[Seu-Dominio].vercel.app/, o problema é o roteamento.
+// Se esta rota responder, a API está 100% funcional.
 app.get("/", (req: Request, res: Response) => {
-    // Retorna uma mensagem de sucesso
     res.json({
-        status: "API Gateway está Online",
+        status: "API Gateway está Online (Native Vercel)",
         environment: process.env.NODE_ENV,
     });
 });
@@ -39,5 +32,6 @@ app.post("/api/v1/tasks", TaskController.createTask);
 app.put("/api/v1/tasks/:id", TaskController.updateTask);
 app.delete("/api/v1/tasks/:id", TaskController.deleteTask);
 
-// Exportamos o handler do serverless-http
-export default serverless(app);
+// EXPORTAÇÃO NATIVA:
+// O Vercel agora processa o app diretamente sem o wrapper serverless-http.
+export default app;
