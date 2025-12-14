@@ -23,7 +23,10 @@ interface Task {
 type TaskStatus = "To Do" | "In Progress" | "Done" | "Blocked";
 const ALL_STATUSES: TaskStatus[] = ["To Do", "In Progress", "Done", "Blocked"];
 
-const API_URL = "http://localhost:3000/api/v1/tasks";
+// Mantenha o localhost para desenvolvimento:
+const API_URL = import.meta.env.PROD
+    ? "/api/v1/tasks" // Usa caminho relativo quando em produção no Vercel
+    : "http://localhost:3000/api/v1/tasks"; // Usa localhost no desenvolvimento
 
 // Função auxiliar para extrair a mensagem de erro (necessário para catch(unknown))
 const getErrorMessage = (error: unknown): string => {
