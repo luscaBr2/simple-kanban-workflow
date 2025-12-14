@@ -7,10 +7,6 @@
             "config": {
                 "includeFiles": ["api/tasks.json"]
             }
-        },
-        {
-            "src": "frontend/index.html",
-            "use": "@vercel/static-build"
         }
     ],
     "routes": [
