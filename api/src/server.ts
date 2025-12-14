@@ -1,6 +1,4 @@
-// Atualizado para Serverless
-
-import express, { Express } from "express";
+import express, { Express, Request, Response } from "express"; // Adicione Request e Response para o tipo da rota de teste
 import cors from "cors";
 import serverless from "serverless-http";
 import TaskController from "./controllers/TaskController";
@@ -22,6 +20,17 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+// --- Rota de Teste ---
+// Se esta rota responder em https://[Seu-Dominio].vercel.app/, o problema é o roteamento.
+app.get("/", (req: Request, res: Response) => {
+    // Retorna uma mensagem de sucesso
+    res.json({
+        status: "API Gateway está Online",
+        environment: process.env.NODE_ENV,
+    });
+});
+// --- FIM Rota de Teste ---
 
 // --- Rotas da API RESTful ---
 app.get("/api/v1/tasks", TaskController.getAllTasks);
