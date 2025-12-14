@@ -1,7 +1,7 @@
 {
     "functions": {
         "src/server.ts": {
-            "includeFiles": "tasks.json"
+            "includeFiles": "src/data/tasks.json"
         }
     }
 }
