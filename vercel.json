@@ -5,13 +5,15 @@
             "src": "api/src/server.ts",
             "use": "@vercel/node",
             "config": {
-                "includeFiles": ["api/tasks.json", "api/dist/**"]
+                "buildCommand": "npm install --prefix api && npm run build --prefix api",
+                "includeFiles": ["api/tasks.json"]
             }
         },
         {
             "src": "frontend/index.html",
             "use": "@vercel/static-build",
             "config": {
+                "buildCommand": "npm install --prefix frontend && npm run build --prefix frontend",
                 "distDir": "frontend/dist"
             }
         }
@@ -23,7 +25,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "frontend/$1"
+            "dest": "frontend/index.html"
         }
     ]
 }
