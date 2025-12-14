@@ -1,0 +1,23 @@
+# ------------------------------------
+# 1. Dependências e Pastas Geradas (Em qualquer subdiretório)
+# ------------------------------------
+node_modules
+dist
+build
+coverage
+.cache
+.env
+.env.*
+.log
+npm-debug.log*
+
+# ------------------------------------
+# 2. Arquivos Específicos do Ambiente
+# ------------------------------------
+.DS_Store                # macOS
+*.tsbuildinfo            # Cache do TypeScript
+
+# ------------------------------------
+# 3. Persistência de Dados
+# ------------------------------------
+/api/tasks.json          # Onde os dados de teste/desenvolvimento são salvos (Caminho absoluto para garantir)
