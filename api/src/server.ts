@@ -1,37 +1,34 @@
-// src/server.ts
+// Atualizado para Serverless
 
 import express, { Express } from "express";
-import cors from "cors"; // <-- 1. Importar o CORS
+import cors from "cors";
+import serverless from "serverless-http";
 import TaskController from "./controllers/TaskController";
 
-const app: Express = express();
-const PORT = process.env.PORT || 3000;
+// A porta é ignorada em ambientes serverless
+// const PORT = process.env.PORT || 3000;
 
-// --- Configuração do CORS ---
-// Permite requisições do seu Front-end (http://localhost:5173)
+const app: Express = express();
+
+// Configuração do CORS: Agora aceita qualquer origem em produção para não dar problemas com o Front-end do Vercel
 const corsOptions = {
-    origin: "http://localhost:5173",
+    // Em produção, o Vercel gerencia a origem
+    origin:
+        process.env.NODE_ENV === "production" ? "*" : "http://localhost:5173",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
     optionsSuccessStatus: 204,
 };
-app.use(cors(corsOptions)); // <-- 2. Usar o CORS
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
 // --- Rotas da API RESTful ---
-
 app.get("/api/v1/tasks", TaskController.getAllTasks);
 app.get("/api/v1/tasks/:id", TaskController.getTaskById);
 app.post("/api/v1/tasks", TaskController.createTask);
 app.put("/api/v1/tasks/:id", TaskController.updateTask);
 app.delete("/api/v1/tasks/:id", TaskController.deleteTask);
 
-// --- Inicialização do Servidor ---
-
-app.listen(PORT, () => {
-    console.log(`[Server] Server is running on port ${PORT}`);
-    console.log(`[API] URL: http://localhost:${PORT}/api/v1/tasks`);
-});
-
-export default app;
+// Exportamos o handler do serverless-http
+export default serverless(app);
