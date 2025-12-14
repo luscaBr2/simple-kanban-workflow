@@ -4,19 +4,34 @@ import TaskController from "./controllers/TaskController";
 
 const app: Express = express();
 
+// CORREÇÃO FINAL: Definindo o domínio exato do seu Front-end
+const PRODUCTION_FRONTEND_ORIGIN =
+    "https://simple-kanban-workflow-frontend.vercel.app";
+
+// Configuração robusta do CORS
 const corsOptions = {
-    origin:
-        process.env.NODE_ENV === "production" ? "*" : "http://localhost:5173",
+    // Lista de origens permitidas:
+    origin: [
+        PRODUCTION_FRONTEND_ORIGIN,
+        // Permite o ambiente local do Front-end (Vite/React padrão)
+        "http://localhost:5173",
+        // Permite o ambiente local da API (se for 3000)
+        "http://localhost:3000",
+    ],
+    // MÉTODOS CORRIGIDOS: É crucial incluir PUT e DELETE para o Kanban
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
+    // Garante que a requisição OPTIONS (Preflight) retorne 204 (No Content)
     optionsSuccessStatus: 204,
 };
+
+// Aplica o middleware CORS
 app.use(cors(corsOptions));
 
+// Middleware para parsing do body JSON
 app.use(express.json());
 
-// --- Rota de Teste ---
-// Se esta rota responder, a API está 100% funcional.
+// --- Rota de Teste (Gateway) ---
 app.get("/", (req: Request, res: Response) => {
     res.json({
         status: "API Gateway está Online (Native Vercel)",
@@ -32,6 +47,5 @@ app.post("/api/v1/tasks", TaskController.createTask);
 app.put("/api/v1/tasks/:id", TaskController.updateTask);
 app.delete("/api/v1/tasks/:id", TaskController.deleteTask);
 
-// EXPORTAÇÃO NATIVA:
-// O Vercel agora processa o app diretamente sem o wrapper serverless-http.
+// EXPORTAÇÃO NATIVA VERCEL
 export default app;
