@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import TaskController from "./controllers/TaskController";
+import TaskController from "./src/controllers/TaskController";
 
 const app: Express = express();
 
