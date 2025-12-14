@@ -1,17 +1,21 @@
 {
+    "functions": {
+        "api/src/server.ts": {
+            "includeFiles": "api/src/data/tasks.json"
+        }
+    },
     "rewrites": [
+        {
+            "source": "/api/v1/tasks/:path*",
+            "destination": "/api/src/server.ts"
+        },
         {
             "source": "/api/v1/tasks",
             "destination": "/api/src/server.ts"
         },
         {
-            "source": "/api/v1/tasks/:path*",
+            "source": "/api/v1",
             "destination": "/api/src/server.ts"
         }
-    ],
-    "functions": {
-        "api/src/server.ts": {
-            "includeFiles": "api/src/data/tasks.json"
-        }
-    }
+    ]
 }
