@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
     DndContext,
     useDraggable,
     useDroppable,
     closestCorners,
-    // Importação correta do tipo DragEndEvent (usando 'type')
     type DragEndEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -18,28 +17,23 @@ interface Task {
     description: string;
     status: "To Do" | "In Progress" | "Done" | "Blocked";
     createdAt: string;
-    updatedAt?: string; // Adicionado para o PUT
+    updatedAt?: string;
 }
 
 type TaskStatus = "To Do" | "In Progress" | "Done" | "Blocked";
 const ALL_STATUSES: TaskStatus[] = ["To Do", "In Progress", "Done", "Blocked"];
 
-// CORREÇÃO CRUCIAL: Incluir o prefixo de rota /api/v1/tasks na URL base.
 const API_BASE_URL = `${
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
 }/api/v1/tasks`;
 
-// Função auxiliar para extrair a mensagem de erro (necessário para catch(unknown))
 const getErrorMessage = (error: unknown): string => {
-    if (error instanceof Error) {
-        return error.message;
-    }
+    if (error instanceof Error) return error.message;
     return "Ocorreu um erro desconhecido.";
 };
 
-// --- Componentes Reutilizáveis do DND-KIT ---
+// --- Componentes Reutilizáveis ---
 
-// 1. Task Card (Item Arrastável)
 const TaskCard: React.FC<{ task: Task }> = React.memo(({ task }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
         useDraggable({
@@ -50,10 +44,8 @@ const TaskCard: React.FC<{ task: Task }> = React.memo(({ task }) => {
     const style = {
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.7 : 1,
-        boxShadow: isDragging
-            ? "0 4px 10px rgba(0, 0, 0, 0.2)"
-            : "0 2px 4px rgba(0, 0, 0, 0.05)",
         zIndex: isDragging ? 100 : "auto",
+        cursor: "grab",
     };
 
     return (
@@ -75,7 +67,6 @@ const TaskCard: React.FC<{ task: Task }> = React.memo(({ task }) => {
     );
 });
 
-// 2. Kanban Column (Área onde se pode soltar)
 const KanbanColumn: React.FC<{ status: TaskStatus; tasks: Task[] }> =
     React.memo(({ status, tasks }) => {
         const { setNodeRef, isOver } = useDroppable({
@@ -111,7 +102,6 @@ const TaskList: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Mapeamento de tarefas por status
     const tasksByStatus = useMemo(() => {
         return ALL_STATUSES.reduce((acc, status) => {
             acc[status] = tasks.filter((task) => task.status === status);
@@ -119,34 +109,26 @@ const TaskList: React.FC = () => {
         }, {} as Record<TaskStatus, Task[]>);
     }, [tasks]);
 
-    // --- Funções de API ---
-
-    const fetchTasks = async () => {
+    // Busca inicial (Única vez que o loading principal é usado)
+    const fetchTasks = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
-            // CORRIGIDO: Usa API_BASE_URL (que agora inclui /api/v1/tasks)
             const response = await fetch(API_BASE_URL);
-            if (!response.ok)
-                throw new Error("Falha ao buscar as tarefas da API.");
+            if (!response.ok) throw new Error("Falha ao buscar as tarefas.");
             const data: Task[] = await response.json();
             setTasks(data);
         } catch (error: unknown) {
-            const message = getErrorMessage(error);
-            setError(
-                `Erro ao conectar com a API: ${message}. Verifique se o backend está rodando.`
-            );
+            setError(getErrorMessage(error));
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !description) return;
 
         try {
-            // CORRIGIDO: Usa API_BASE_URL (que agora inclui /api/v1/tasks)
             const response = await fetch(API_BASE_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -160,17 +142,16 @@ const TaskList: React.FC = () => {
             setTitle("");
             setDescription("");
         } catch (error: unknown) {
-            const message = getErrorMessage(error);
-            setError(`Erro ao adicionar a tarefa: ${message}.`);
+            setError(`Erro ao adicionar: ${getErrorMessage(error)}`);
         }
     };
 
+    // FUNÇÃO REFORMULADA: Sincroniza em segundo plano SEM usar fetchTasks()
     const updateTaskStatusAPI = async (
         taskId: string,
         newStatus: TaskStatus
     ) => {
         try {
-            // CORRIGIDO: Usa API_BASE_URL e apenas adiciona o ID
             const response = await fetch(`${API_BASE_URL}/${taskId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -178,23 +159,20 @@ const TaskList: React.FC = () => {
             });
 
             if (!response.ok) {
-                // Se falhar na API, recarrega o estado real do backend
-                fetchTasks();
-                throw new Error("Falha ao atualizar o status na API.");
+                throw new Error("Erro no servidor ao salvar status.");
             }
-
-            // Recarrega o estado para garantir a consistência
-            fetchTasks();
+            // SUCESSO SILENCIOSO: Não chamamos fetchTasks() aqui,
+            // pois o handleDragEnd já atualizou a tela para o usuário.
         } catch (error: unknown) {
             const message = getErrorMessage(error);
-            setError(`Erro ao salvar a mudança de status: ${message}.`);
+            setError(`Erro ao sincronizar: ${message}. Revertendo...`);
+            // Em caso de erro real, aí sim recarregamos para garantir a integridade
+            fetchTasks();
         }
     };
 
-    // --- Lógica de Drag and Drop (dnd-kit) ---
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-
         if (!over || active.id === over.id) return;
 
         const taskId = String(active.id);
@@ -203,32 +181,35 @@ const TaskList: React.FC = () => {
         const taskToMove = tasks.find((t) => t.id === taskId);
         if (!taskToMove || taskToMove.status === newStatus) return;
 
-        // 1. Atualização Otimista do Estado Local
+        // 1. Atualização Otimista (INSTANTÂNEA NA TELA)
         setTasks((prevTasks) =>
             prevTasks.map((task) =>
                 task.id === taskId ? { ...task, status: newStatus } : task
             )
         );
 
-        // 2. Chamada à API para Persistir a Mudança
+        // 2. Persistência (EM SEGUNDO PLANO)
         updateTaskStatusAPI(taskId, newStatus);
     };
 
-    // --- Efeito de Montagem ---
-
     useEffect(() => {
         fetchTasks();
-    }, []);
+    }, [fetchTasks]);
 
-    if (loading)
+    // O loading só bloqueia a tela no carregamento INICIAL
+    if (loading && tasks.length === 0)
         return <div className="loading-message">Carregando tarefas...</div>;
-    if (error) return <div className="error-message">{error}</div>;
 
     return (
         <div className="kanban-container">
             <h1>Simple Workflow Kanban</h1>
 
-            {/* Formulário de Adição */}
+            {error && (
+                <div className="error-message" onClick={() => setError(null)}>
+                    {error} <span>(clique para fechar)</span>
+                </div>
+            )}
+
             <form onSubmit={handleAddTask} className="add-task-form">
                 <input
                     type="text"
@@ -246,7 +227,6 @@ const TaskList: React.FC = () => {
                 <button type="submit">Adicionar Tarefa</button>
             </form>
 
-            {/* Kanban Board - DndContext */}
             <DndContext
                 onDragEnd={handleDragEnd}
                 collisionDetection={closestCorners}
