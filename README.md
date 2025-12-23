@@ -46,7 +46,7 @@ A API está disponível no prefixo: `https://simple-kanban-workflow-api.vercel.a
 
 ```bash
 # Clone o repositório
-git clone https://github.com/luscaBr2/simple-kanban-workflow.git
+git clone [https://github.com/luscaBr2/simple-kanban-workflow.git](https://github.com/luscaBr2/simple-kanban-workflow.git)
 
 # No terminal da pasta /api
 npm install && npm run dev
