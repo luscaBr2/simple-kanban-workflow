@@ -3,6 +3,7 @@ import cors from "cors";
 import TaskController from "./src/controllers/TaskController";
 
 const app: Express = express();
+const API_PORT = 3000;
 
 // CORREÇÃO FINAL: Definindo o domínio exato do seu Front-end
 const PRODUCTION_FRONTEND_ORIGIN =
@@ -30,6 +31,10 @@ app.use(cors(corsOptions));
 
 // Middleware para parsing do body JSON
 app.use(express.json());
+
+app.listen(API_PORT, () => {
+    console.log(`API rodando na porta ${API_PORT}`);
+});
 
 // --- Rota de Teste (Gateway) ---
 app.get("/", (req: Request, res: Response) => {
